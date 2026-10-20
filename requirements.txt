@@ -1,0 +1,13 @@
+torch
+numpy
+pandas
+scipy
+xarray
+netcdf4
+pyyaml
+matplotlib
+cartopy
+dtcwt
+pytorch_wavelets
+torchmetrics[image]
+piq

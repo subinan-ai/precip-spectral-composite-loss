@@ -1,0 +1,104 @@
+experiment_name: conv3d_facl_wacl_lv3_w1_fss_1                                     # 실험 이름 맞게 변경
+seed: 42
+task: eval                                                             # 학습시 : train / 평가시 : eval
+ckpt: "./experiments/subin_an/conv3d_facl_wacl_lv3_w1/checkpoints/best_val_lpips.pt" # 평가시 불러올 checkpoint 파일 경로
+
+paths:
+  # 데이터 경로
+  tp_file: "./data/1979_2023_MaySep_prec.nc"
+  q850_file: "./data/1979_2023_MaySep_q850.nc"
+  q1000_file: "./data/1979_2023_MaySep_q1000.nc"
+  # 저장 경로
+  log_dir: "./experiments/subin_an/conv3d_facl_wacl_lv3_w1/logs"
+  ckpt_dir: "./experiments/subin_an/conv3d_facl_wacl_lv3_w1/checkpoints"
+  # 시각화 경로
+  eval_dir: "./experiments/subin_an/conv3d_facl_wacl_lv3_w1/eval"
+
+model:
+  version: "3d" # 2d / 3d 선택
+  name: "geo_unet"
+  x1_channels: 1
+  x2_channels: 1
+  hidden_channels: 24
+
+data:
+  label_offsets: [1, 2, 3]    # ← t 기준 t+1,t+2,t+3 예측
+  num_workers: 4
+  pin_memory: true
+  engine: "netcdf4"           # xarray 엔진 이슈 있으면 "h5netcdf"로 바꿔보기
+
+trainer:
+  epochs: 80               
+  batch_size: 16
+  amp: false
+  grad_clip: 0.0
+  accumulate_steps: 1
+  log_interval: 50            # 로그하는 mini-batch 개수
+  val_interval: 1             # validation 하는 epoch 개수
+  save_per_metric: true       # 모든 메트릭별로 최고 성능 epoch 저장
+
+monitor:
+  key: "val/mse"              # val_mse 기준 최고 성능 epoch 저장
+  mode: "min"                 # min : 작을수록 좋은 메트릭 / max : 클수록 좋은 메트릭  
+
+opt:
+  name: Adam
+  lr: 1.0e-4
+  weight_decay: 0.0
+  betas: [0.9, 0.999]
+  eps: 1.0e-8
+  amsgrad: false
+
+loss:
+  name: "facl_wacl_lv3_w1"      
+  kwargs:
+    alpha: 0.1
+    beta: 1.0
+    gamma1: 2.0
+    gamma2: 0.5
+    gamma3: 0.5
+
+metrics:
+  names: [mse, mae, csi_r90p, csi_r95p, fss, rhd, phase, amp, lpips, cpbd, cpbd_true, lpc_si, lpc_si_true, lpc_mean, lpc_mean_true, hausdorff, hausdorff95]     # CSV/TB에 찍힐 키
+  use_mae: true
+  use_mse: true
+  use_ssim: false
+  use_psnr: false
+  use_csi: false
+  use_csi_r90p: true
+  use_csi_r95p: true
+  use_fss: true
+  use_rhd: true
+  use_phase: true
+  use_amp: true
+  use_lpips: true
+  use_cpbd: true
+  use_cpbd_true: true
+  use_lpc_si: true
+  use_lpc_si_true: true
+  use_lpc_mean: true
+  use_lpc_mean_true: true
+  use_hausdorff: true
+  use_hausdorff95: true
+  # 임계값/윈도우
+  #csi_threshold: 8
+  csi_r90p_map: "/home/subin_an/loss_experiment_2/precipitation_loss_experiment-main-2/threshold_map/R90p_map.npy"
+  csi_r95p_map: "/home/subin_an/loss_experiment_2/precipitation_loss_experiment-main-2/threshold_map/R95p_map.npy"
+  csi_window: 5
+  fss_threshold: 1
+  fss_window: 5
+  rhd_psz: 15
+  rhd_bins: 50
+
+normalization:
+  tp:
+    mean: 0.002479317132383585
+    std: 0.005952117739409208
+
+freq_snr_comparison:
+  - label: "MSE"
+    ckpt: "./experiments/subin_an/conv3d_mse_r90p_r95p/checkpoints/best_val_lpips.pt"
+  - label: "FACL"
+    ckpt: "./experiments/subin_an/conv3d_facl_r90p_r95p/checkpoints/best_val_lpips.pt"
+  - label: "WFCL"
+    ckpt: "./experiments/subin_an/conv3d_facl_wacl_lv3_r90p_r95p/checkpoints/best_val_lpips.pt"

@@ -1,0 +1,26 @@
+# 캐시 및 바이너리 데이터
+__pycache__/
+*.pyc
+
+# 데이터 및 결과 제외
+data/
+experiments/
+log_cli/
+*.pt
+*.ckpt
+*.npz
+
+# 로컬 환경 설정
+.env
+wandb/
+logs/
+# 대용량·중복·외부 코드 (GitHub 업로드 제외)
+results/
+metrics/weatherbench2/
+loss_experiment_2/
+threshold_map/*.npy
+*.npy
+*.nc
+*.pth
+nohup.out
+*.log
